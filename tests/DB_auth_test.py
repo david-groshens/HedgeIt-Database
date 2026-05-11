@@ -1,6 +1,7 @@
-import pyodbc
-import sys
+"""Database authentication tests."""
+
 import os
+import pyodbc # pylint: disable=no-member
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,7 +21,11 @@ connectionString = (
     "Authentication=ActiveDirectoryIntegrated"
 )
 
+
 def test_connection():
+    '''
+    Function to test the HedgeIt Database Connections.
+    '''
     print(f"Attempting to connect to {server}...")
     try:
         # connect to DB
