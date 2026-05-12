@@ -43,6 +43,7 @@ CREATE TABLE dbo.fut_hedge (
     currency_1 AS (LEFT(currency_pair, 3)) PERSISTED,
     currency_2 AS (RIGHT(currency_pair, 3)) PERSISTED,
 
+--added
     client_amt_currency_1_formula AS (
         CASE
             WHEN LEFT(currency_pair, 3) = hedged_currency THEN hedged_amount_formula
