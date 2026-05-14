@@ -15,7 +15,16 @@
 CREATE TABLE dbo.hedgeit_client (
     client_id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     client_alias NVARCHAR(255) NOT NULL,
-    client NVARCHAR(255) NULL, -- This seems to be unused think will remove
+    client_ref NVARCHAR(255) NULL,
+    ibkr_account_number NVARCHAR(255) NOT NULL,
+    ibkr_master_account_number NVARCHAR(255) NOT NULL, --is this the SE master account number in every row.
+    ibkr_master_account_location NVARCHAR(255) NOT NULL,
+    ibkr_t_plus_1 NVARCHAR(255) NOT NULL,
+    account_currency NVARCHAR(255) NOT NULL,
+    margin_deposit_currency NVARCHAR(255) NULL,
+    se_fees_covered DECIMAL(19,6) NOT NULL,
+    accrued_gross_pnl DECIMAL(19,6) NOT NULL,
+    comments NVARCHAR(255) NULL,
     CONSTRAINT UQ_hedgeit_client_client_alias UNIQUE (client_alias)
 );
 GO
@@ -83,7 +92,6 @@ CREATE TABLE dbo.hedgeit_fut_hedge (
     trade_id NVARCHAR(255) NOT NULL, -- External or upstream trade identifier; unique per client_id.
     client_id INT NOT NULL, -- FK to hedgeit_client; replaces denormalized client_alias.
     trade_status NVARCHAR(255) NULL, -- Workflow status of the hedge/trade.
-    client_ref NVARCHAR(255) NULL, -- Client reference, ticket, or deal id.
     [type] NVARCHAR(255) NULL, -- Trade classification (e.g. hedge vs other).
     currency_pair NVARCHAR(255) NULL, -- Six-letter FX pair code (e.g. EURUSD).
     instrument_currency NVARCHAR(255) NULL, -- Currency the instrument is quoted in.
@@ -117,8 +125,8 @@ CREATE TABLE dbo.hedgeit_fut_hedge (
     margin_currency NVARCHAR(255) NULL, -- ISO currency code for margin_amount.
     margin_amount DECIMAL(19, 6) NULL, -- Margin notional in margin_currency.
 
-    CONSTRAINT FK_hedgeit_fut_hedge_hedgeit_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id),
-    CONSTRAINT FK_hedgeit_fut_hedge_hedgeit_micro_replication FOREIGN KEY (micro_replication_id) REFERENCES dbo.hedgeit_micro_replication (micro_replication_id),
+    CONSTRAINT FK_hedgeit_fut_hedge_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id),
+    CONSTRAINT FK_hedgeit_fut_hedge_micro_replication FOREIGN KEY (micro_replication_id) REFERENCES dbo.hedgeit_micro_replication (micro_replication_id),
     CONSTRAINT UQ_hedgeit_fut_hedge_client_trade UNIQUE (client_id, trade_id),
 
     -- First leg of the pair: left three characters of currency_pair.
@@ -437,7 +445,6 @@ CREATE TABLE dbo.hedgeit_opt_hedge (
     trade_id NVARCHAR(255) NOT NULL, -- External or upstream trade identifier; unique per client_id.
     client_id INT NOT NULL, -- FK to hedgeit_client; replaces denormalized client_alias.
     trade_status NVARCHAR(255) NULL, -- Workflow status of the hedge/trade.
-    client_ref NVARCHAR(255) NULL, -- Client reference, ticket, or deal id.
     currency_pair NVARCHAR(255) NULL, -- Six-letter FX pair code (e.g. EURUSD).
     [type] NVARCHAR(255) NULL, -- Trade classification (e.g. hedge vs other).
     strategy NVARCHAR(255) NULL, -- Strategy or book classification for the option trade.
@@ -467,7 +474,7 @@ CREATE TABLE dbo.hedgeit_opt_hedge (
     commentaires NVARCHAR(255) NULL, -- Free-form notes (legacy column name).
     today_date DATE NULL, --is this the date when this row/trade is inserted
 
-    CONSTRAINT FK_hedgeit_opt_hedge_hedgeit_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id),
+    CONSTRAINT FK_hedgeit_opt_hedge_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id),
     CONSTRAINT FK_hedgeit_opt_hedge_option_micro_replication FOREIGN KEY (option_micro_replication_id) REFERENCES dbo.hedgeit_option_micro_replication (option_micro_replication_id),
     CONSTRAINT UQ_hedgeit_opt_hedge_client_trade UNIQUE (client_id, trade_id),
 
@@ -586,8 +593,7 @@ CREATE TABLE dbo.hedgeit_deposit_micro_replication (
     cash_eur_jpy_fut_formula NVARCHAR(255) NULL,
     cash_gbp_jpy_fut_formula NVARCHAR(255) NULL,
     t_bills_formula NVARCHAR(255) NULL,
-    t_bills_eur_formula NVARCHAR(255)
-
+    t_bills_eur_formula NVARCHAR(255) NULL
 );
 GO
 
@@ -595,7 +601,6 @@ CREATE TABLE dbo.hedgeit_deposit (
     deposit_id INT IDENTITY(1,1) NOT NULL PRIMARY KEY, -- Surrogate primary key for this deposit trade row.
     trade_id NVARCHAR(255) NOT NULL, -- External or upstream trade identifier; unique per client_id.
     client_id INT NOT NULL, -- FK to hedgeit_client; replaces denormalized client_alias.
-    client_ref NVARCHAR(255) NULL, -- Client reference, ticket, or deal id.
     trade_status NVARCHAR(255) NULL, -- Workflow status of the hedge/trade.
     [type] NVARCHAR(255) NULL, -- Trade classification (e.g. hedge vs other).
     deposit_currency NVARCHAR(255) NULL,
@@ -684,3 +689,110 @@ CREATE TABLE dbo.hedgeit_deposit (
     ) PERSISTED
 );
 GO
+
+CREATE TABLE dbo.hedgeit_stock (
+    stock_id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    client_id INT NOT NULL, -- FK to hedgeit_client; replaces denormalized client_alias.
+    trade_id NVARCHAR(255) NOT NULL, -- External or upstream trade identifier; unique per client_id.
+    trade_status NVARCHAR(255) NULL, -- Workflow status of the hedge/trade.
+    [type] NVARCHAR(255) NULL, -- Trade classification (e.g. hedge vs other)
+    instrument NVARCHAR(255) NOT NULL, --instument
+    instrument_currency NVARCHAR(255) NULL, 
+    ticker NVARCHAR(255) NULL,
+    isin NVARCHAR(255) NULL,
+    trade_date DATE NOT NULL,
+    actual_end_date DATE NOT NULL,
+    position INT NULL, --CHECK THIS CAN BE INT
+    position_formula NVARCHAR(255) NULL,
+    traded_price DECIMAL(19,6) NULL,
+    traded_price_formula DECIMAL(19,6) NULL,
+    sold_price DECIMAL(19,6) NULL,
+    se_initial_margin DECIMAL(19,6) NULL,
+    se_maintenance_margin DECIMAL(19,6) NULL,
+    se_fee DECIMAL(19,6) NULL,
+    se_fee_formula NVARCHAR(255),
+    comments NVARCHAR(255),
+    associated_trade_id NVARCHAR(255),
+
+    -- Notional: position times traded price, rounded to whole units (legacy Access notional).
+    notional AS (
+        CAST(ROUND(CAST(position AS DECIMAL(19, 6)) * traded_price, 0) AS DECIMAL(19, 0))
+    ) PERSISTED,
+
+    CONSTRAINT FK_hedgeit_stock_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id)
+);
+GO
+
+CREATE TABLE dbo.cash_flow (
+    cash_flow_id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    cash_flow_row_id INT NULL, --what does this refer to.
+    client_id INT NOT NULL, -- FK to hedgeit_client; replaces denormalized client_alias.
+    cash_flow_date DATE NOT NULL,
+    cash_flow_type NVARCHAR(255)NULL,
+    cash_flow_note NVARCHAR(255) NULL,
+    usd NVARCHAR(255) NULL,
+    hkd NVARCHAR(255) NULL,
+    cnh NVARCHAR(255) NULL,
+    eur NVARCHAR(255) NULL,
+    dkk NVARCHAR(255) NULL,
+    gbp NVARCHAR(255) NULL,
+    chf NVARCHAR(255) NULL,
+    jpy NVARCHAR(255) NULL,
+    aud NVARCHAR(255) NULL,
+    cad NVARCHAR(255) NULL,
+    sgd NVARCHAR(255) NULL,
+    cash_flow_comment NVARCHAR(255) NULL,
+    cash_flow_fill BIGINT NULL,
+    cash_flow_font BIGINT NULL,
+
+
+    CONSTRAINT FK_hedgeit_cash_flow_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id)
+);
+GO
+
+CREATE TABLE dbo.hedgeit_all_ibkr_portfolios (
+    account_id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    ibkr_account_number NVARCHAR(255) NOT NULL,
+    symbol NVARCHAR(255) NULL,
+    long_symbol NVARCHAR(255) NULL,
+    sector_type NVARCHAR(255) NULL,
+    exchange NVARCHAR(255) NULL,
+    currency NVARCHAR(255) NULL,
+    notional DECIMAL(19,6) NULL,
+    maturity_1 NVARCHAR(255) NOT NULL,
+    strike_price DECIMAL(19,6) NULL,
+    [right] NVARCHAR(255) NULL,
+    quantity INT NULL,
+    market_value DECIMAL(19,6) NULL,
+    market_price DECIMAL(19,6) NULL,
+    average_cost DECIMAL(19,6) NULL,
+    unrealized_pnl DECIMAL(19,6) NULL,
+    realized_pnl DECIMAL(19,6) NULL,
+    delta_dollars DECIMAL(19,6) NULL,
+    maturity_2 DATE NOT NULL
+);
+GO
+
+CREATE TABLE dbo.hedgeit_fees (
+    fees_id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    client_id INT NOT NULL, --fk to client table
+    computed_month DATE NULL,
+    hedge_notional_formula NVARCHAR(255) NULL,
+    hedge_notional DECIMAL(19,6) NULL,
+    deposit_notional_formula NVARCHAR(255) NULL,
+    deposit_notional DECIMAL(19,6) NULL,
+    hedge_fee_rate DECIMAL(19,6) NULL,
+    deposit_fee_rate DECIMAL(19,6) NULL,
+    negociated_fee_rate_adjustment DECIMAL(19,6) NULL,
+    exceptional_adjustment DECIMAL(19,6) NULL,
+    standard_fee DECIMAL(19,6) NULL,
+    final_fee DECIMAL(19,6) NULL,
+    net_rate_final_fee DECIMAL(19,6) NULL,
+    adjusted_final_fee DECIMAL(19,6) NULL,
+    comments NVARCHAR(255) NULL,
+
+    CONSTRAINT FK_hedgeit_fees_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id)
+);
+GO
+
+
