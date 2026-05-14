@@ -60,7 +60,6 @@ CREATE TABLE dbo.hedgeit_micro_replication (
     instrument_11_id INT NULL,
     instrument_12_id INT NULL,
     -- position_1..position_12: WHAT IS THIS?
-    position_1 INT NULL,
     position_2 INT NULL,
     position_3 INT NULL,
     position_4 INT NULL,
@@ -356,8 +355,8 @@ CREATE TABLE dbo.hedgeit_option_micro_replication (
     mtm_currency_2_2 DECIMAL(19,6) NULL, -- Mark-to-market per unit in second currency for leg 2 (used in PnL formulas).
     spot_rate DECIMAL(19,6) NULL, -- Spot FX for converting leg-2 amounts to USD when the pair second currency is not USD.
 
-    CONSTRAINT FK_hedgeit_option_micro_replication_instrument_1 FOREIGN KEY (instrument_1_id) REFERENCES dbo.hedgeit_instrument (instrument_id),
-    CONSTRAINT FK_hedgeit_option_micro_replication_instrument_2 FOREIGN KEY (instrument_2_id) REFERENCES dbo.hedgeit_instrument (instrument_id),
+    CONSTRAINT FK_hedgeit_micro_replication_instrument_1 FOREIGN KEY (instrument_1_id) REFERENCES dbo.hedgeit_instrument (instrument_id),
+    CONSTRAINT FK_hedgeit_micro_replication_instrument_2 FOREIGN KEY (instrument_2_id) REFERENCES dbo.hedgeit_instrument (instrument_id),
 
     -- Leg 1: total initial premium in USD (Access IIf on USD in second leg of pair vs divide by spot_rate).
     initial_premium_total_usd_1 AS (
@@ -627,7 +626,7 @@ CREATE TABLE dbo.hedgeit_deposit (
 
     CONSTRAINT FK_hedgeit_deposit_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id),
     CONSTRAINT FK_hedgeit_deposit_micro_replication FOREIGN KEY (deposit_micro_replication_id) REFERENCES dbo.hedgeit_deposit_micro_replication (option_micro_replication_id),
-    CONSTRAINT UQ_hedgeit_deposit_client_trade UNIQUE (client_id, trade_id),
+    CONSTRAINT UQ_hedgeit_opt_hedge_client_trade UNIQUE (client_id, trade_id),
 
     -- Announced interest accrued in deposit currency: value × announced rate / 365 × days from start to min(maturity, today) when maturity in future else maturity (legacy Access announced_accrued_in_currency).
     announced_accrued_in_currency AS (
