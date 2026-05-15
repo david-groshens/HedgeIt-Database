@@ -759,19 +759,19 @@ GO
 CREATE TABLE dbo.hedgeit_fees (
     fees_id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
     client_id INT NOT NULL, --fk to client table
-    computed_month DATE NULL,
+    computed_month DATE NOT NULL,
     hedge_notional_formula NVARCHAR(255) NULL,
     hedge_notional DECIMAL(19,6) NULL,
     deposit_notional_formula NVARCHAR(255) NULL,
     deposit_notional DECIMAL(19,6) NULL,
-    hedge_fee_rate DECIMAL(19,6) NULL,
-    deposit_fee_rate DECIMAL(19,6) NULL,
+    hedge_fee_rate DECIMAL(19,6) NOT NULL,
+    deposit_fee_rate DECIMAL(19,6) NOT NULL,
     negociated_fee_rate_adjustment DECIMAL(19,6) NULL,
     exceptional_adjustment DECIMAL(19,6) NULL,
-    standard_fee DECIMAL(19,6) NULL,
-    final_fee DECIMAL(19,6) NULL,
+    standard_fee DECIMAL(19,6) NOT NULL,
+    final_fee DECIMAL(19,6) NOT NULL,
     net_rate_final_fee DECIMAL(19,6) NULL,
-    adjusted_final_fee DECIMAL(19,6) NULL,
+    adjusted_final_fee DECIMAL(19,6) NOT NULL,
     comments NVARCHAR(255) NULL,
 
     CONSTRAINT FK_hedgeit_fees_client FOREIGN KEY (client_id) REFERENCES dbo.hedgeit_client (client_id)
